@@ -1,0 +1,32 @@
+# Industrial Safety Features
+
+# Test 1: Safety Integrity Level (SIL) types
+type Temperature = Float
+type Pressure = Float
+
+# Test 2: Safety-critical function
+@critical
+def emergency_shutdown()
+  puts "EMERGENCY: Shutting down..."
+  # In real implementation, this would interface with actual hardware
+end
+
+# Test 3: Real-time constraint
+@deadline(100ms)
+def read_sensor() -> Float
+  42.5
+end
+
+# Test 4: Watchdog
+@watchdog(1s)
+def heartbeat()
+  puts "Heartbeat OK"
+end
+
+# Test 5: Bounds-checked values
+type BoundedTemperature = Temperature where self >= 0.0 and self <= 500.0
+
+let temp: BoundedTemperature = 75.5
+puts temp
+
+puts "Industrial safety: OK"

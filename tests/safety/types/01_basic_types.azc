@@ -1,0 +1,16 @@
+# Type Safety Tests
+
+let x: Int = 42
+let y: Float = 3.14
+let name: String = "AZC"
+let flag: Bool = true
+
+# Type inference
+let inferred_int = 100
+let inferred_float = 2.718
+let inferred_bool = false
+
+# Type annotations with inference check
+let a: Int = inferred_int
+
+puts "Type safety: OK"

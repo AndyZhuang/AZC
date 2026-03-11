@@ -1,0 +1,14 @@
+# Ownership Tests
+
+# Copy types (primitives can be copied)
+let a = 10
+let b = a
+puts "Copy: a and b both valid"
+
+# Move semantics (strings are moved)
+let s1 = "hello"
+let s2 = s1
+# s1 is no longer valid after move
+# puts s1  # This would be a compile error
+
+puts "Ownership: OK"

@@ -1,0 +1,30 @@
+# Ownership Tests
+
+# Test 1: Copy semantics for primitives
+let a = 10
+let b = a
+puts "Copy test: both a and b are valid"
+puts a
+puts b
+
+# Test 2: Move semantics for non-Copy types
+let s1 = "hello"
+let s2 = s1
+# s1 should no longer be valid after move
+# puts s1  # This would be a compile error
+puts s2
+
+# Test 3: Explicit copy
+let x = 42
+let y = x.clone()
+puts "Explicit copy:"
+puts x
+puts y
+
+# Test 4: Scope-based drop
+if true
+  let temp = "temporary"
+  puts temp
+  # temp is dropped here
+end
+# puts temp  # Error: temp out of scope

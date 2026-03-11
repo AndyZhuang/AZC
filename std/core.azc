@@ -1,0 +1,152 @@
+# AZC Core Library
+
+# Option type - represents an optional value
+struct Option<T>
+    case Some(T)
+    case None
+end
+
+# Result type - represents a result or error
+struct Result<T, E>
+    case Ok(T)
+    case Err(E)
+end
+
+# Box - heap allocation
+struct Box<T>
+    ptr: *mut T
+end
+
+impl Box<T>
+    def new(value: T) -> Box<T>
+        Box { ptr: alloc(value) }
+    end
+    
+    def deref(self) -> &T
+        unsafe { *self.ptr }
+    end
+    
+    def drop(self)
+        unsafe { free(self.ptr) }
+    end
+end
+
+# Rc - reference counted
+struct Rc<T>
+    ptr: *mut RcInner<T>
+end
+
+struct RcInner<T>
+    value: T
+    count: usize
+end
+
+impl Rc<T>
+    def new(value: T) -> Rc<T>
+        Rc { ptr: alloc(RcInner { value, count: 1 }) }
+    end
+    
+    def clone(self) -> Rc<T>
+        unsafe { (*self.ptr).count += 1 }
+        Rc { ptr: self.ptr }
+    end
+    
+    def deref(self) -> &T
+        unsafe { &(*self.ptr).value }
+    end
+end
+
+# Basic operations
+def id<T>(x: T) -> T
+    x
+end
+
+def clone<T: Clone>(x: &T) -> T
+    x.clone()
+end
+
+def drop<T>(x: T)
+    x.drop()
+end
+
+# Comparison traits
+trait Eq
+    def eq(self, other: &Self) -> Bool
+    def ne(self, other: &Self) -> Bool
+        not self.eq(other)
+    end
+end
+
+trait Ord
+    def cmp(self, other: &Self) -> Ordering
+    def lt(self, other: &Self) -> Bool
+    def le(self, other: &Self) -> Bool
+    def gt(self, other: &Self) -> Bool
+    def ge(self, other: &Self) -> Bool
+end
+
+enum Ordering
+    Less
+    Equal
+    Greater
+end
+
+# String operations
+def str<T: ToString>(x: T) -> String
+    x.to_string()
+end
+
+trait ToString
+    def to_string(self) -> String
+end
+
+# Default trait
+trait Default
+    def default() -> Self
+end
+
+# Numeric traits
+trait Add<Rhs = Self>
+    type Output
+    def add(self, rhs: Rhs) -> Self::Output
+end
+
+trait Sub<Rhs = Self>
+    type Output
+    def sub(self, rhs: Rhs) -> Self::Output
+end
+
+trait Mul<Rhs = Self>
+    type Output
+    def mul(self, rhs: Rhs) -> Self::Output
+end
+
+trait Div<Rhs = Self>
+    type Output
+    def div(self, rhs: Rhs) -> Self::Output
+end
+
+# Iterator trait
+trait Iterator<Item>
+    def next(self) -> Option<Item>
+    
+    def map<B, F: Fn(Self::Item) -> B>(self, f: F) -> Map<Self, F>
+        Map { iter: self, f }
+    end
+    
+    def filter<P: Fn(&Self::Item) -> Bool>(self, predicate: P) -> Filter<Self, P>
+        Filter { iter: self, predicate }
+    end
+    
+    def fold<B, F: Fn(B, Self::Item) -> B>(self, init: B, f: F) -> B
+        let mut acc = init
+        while let Some(x) = self.next()
+            acc = f(acc, x)
+        end
+        acc
+    end
+    
+    def collect<B: FromIterator<Self::Item>>(self) -> B
+        B::from_iter(self)
+    end
+end

@@ -1,0 +1,30 @@
+# Borrow Checker Tests
+
+# Test 1: Immutable borrow
+let x = 42
+let ref_x = &x
+puts "Borrowed value:"
+puts *ref_x
+
+# Test 2: Multiple immutable borrows
+let data = "hello"
+let r1 = &data
+let r2 = &data
+puts "Multiple immutable borrows:"
+puts *r1
+puts *r2
+
+# Test 3: Mutable borrow
+let mut counter = 0
+let counter_ref = &mut counter
+*counter_ref = 10
+puts counter
+
+# Test 4: Borrow conflict (should fail)
+# let mut value = 5
+# let r1 = &value
+# let r2 = &mut value  # ERROR: cannot borrow as mutable while borrowed as immutable
+# puts *r1
+# puts *r2
+
+puts "Borrow checker: OK"

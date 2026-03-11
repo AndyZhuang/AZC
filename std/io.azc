@@ -1,0 +1,118 @@
+# AZC IO Library
+
+# Standard input/output
+def puts(s: String)
+    unsafe { azc_puts(s) }
+end
+
+def print(s: String)
+    unsafe { azc_print(s) }
+end
+
+def eputs(s: String)
+    unsafe { azc_eputs(s) }
+end
+
+def eprint(s: String)
+    unsafe { azc_eprint(s) }
+end
+
+# File operations
+struct File
+    handle: *mut void
+end
+
+impl File
+    def open(path: &String) -> Result<File, IoError>
+        let handle = unsafe { azc_file_open(path) }
+        if handle.is_null()
+            Err(IoError::OpenFailed)
+        else
+            Ok(File { handle })
+        end
+    end
+    
+    def read(self, buf: &mut Array<u8>) -> Result<usize, IoError>
+        let n = unsafe { azc_file_read(self.handle, buf.ptr(), buf.len()) }
+        if n < 0
+            Err(IoError::ReadFailed)
+        else
+            Ok(n as usize)
+        end
+    end
+    
+    def write(self, buf: &Array<u8>) -> Result<usize, IoError>
+        let n = unsafe { azc_file_write(self.handle, buf.ptr(), buf.len()) }
+        if n < 0
+            Err(IoError::WriteFailed)
+        else
+            Ok(n as usize)
+        end
+    end
+    
+    def close(self)
+        unsafe { azc_file_close(self.handle) }
+    end
+end
+
+# IO Error type
+enum IoError
+    OpenFailed
+    ReadFailed
+    WriteFailed
+    InvalidPath
+    PermissionDenied
+end
+
+# Stdin
+struct Stdin end
+
+impl Stdin
+    def read_line(self) -> Result<String, IoError>
+        let mut buf = String::new()
+        let result = unsafe { azc_stdin_read_line(buf.ptr()) }
+        if result < 0
+            Err(IoError::ReadFailed)
+        else
+            Ok(buf)
+        end
+    end
+end
+
+def stdin() -> Stdin
+    Stdin
+end
+
+# Stdout
+struct Stdout end
+
+impl Stdout
+    def write(self, s: &String)
+        print(s)
+    end
+    
+    def write_line(self, s: &String)
+        puts(s)
+    end
+end
+
+def stdout() -> Stdout
+    Stdout
+end
+
+# Stderr
+struct Stderr end
+
+impl Stderr
+    def write(self, s: &String)
+        eprint(s)
+    end
+    
+    def write_line(self, s: &String)
+        eputs(s)
+    end
+end
+
+def stderr() -> Stderr
+    Stderr
+end

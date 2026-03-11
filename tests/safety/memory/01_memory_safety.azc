@@ -1,0 +1,36 @@
+# Memory Safety Tests
+
+# Test 1: No null pointers (use Option)
+let maybe_value: Option<Int> = Some(42)
+match maybe_value
+when Some(val)
+  puts val
+when None
+  puts "No value"
+end
+
+# Test 2: Bounds checking
+let arr = [1, 2, 3, 4, 5]
+puts arr[0]
+puts arr[2]
+# puts arr[10]  # Would be error: index out of bounds
+
+# Test 3: Safe string operations
+let text = "Hello, AZC!"
+puts text
+
+# Test 4: No dangling references
+def get_string() -> String
+  "returned string"
+end
+
+let result = get_string()
+puts result
+
+# Test 5: No use-after-free
+let boxed = Box.new(100)
+let value = *boxed
+puts value
+# After boxed is dropped, it cannot be used
+
+puts "Memory safety: OK"
