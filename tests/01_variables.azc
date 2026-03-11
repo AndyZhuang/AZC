@@ -1,0 +1,5 @@
+# Test 01: Variables
+let x = 10
+let name = "AZC"
+let active = true
+puts "Variables: OK"

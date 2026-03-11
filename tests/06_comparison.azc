@@ -1,0 +1,27 @@
+# Test 06: Comparison Operators
+let x = 10
+let y = 20
+
+if x == 10
+    puts "x equals 10"
+end
+
+if x != 5
+    puts "x not equal 5"
+end
+
+if y > x
+    puts "y > x"
+end
+
+if x < y
+    puts "x < y"
+end
+
+if x >= 10
+    puts "x >= 10"
+end
+
+if x <= 10
+    puts "x <= 10"
+end

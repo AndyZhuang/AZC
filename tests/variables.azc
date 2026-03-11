@@ -1,0 +1,6 @@
+# Test: Basic variables
+let x = 10
+let name = "AZC"
+let flag = true
+
+puts "Variables test passed"

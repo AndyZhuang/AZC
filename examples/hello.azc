@@ -1,0 +1,65 @@
+# AZC Example Programs
+
+# Hello World
+puts "Hello, AZC World!"
+
+# Variables and types
+x = 10
+name = "AZC"
+is_ready = true
+
+# Function definitions
+def add(a, b)
+  a + b
+end
+
+def greet(name: String) -> String
+  "Hello, #{name}!"
+end
+
+# Control flow
+if x > 5
+  puts "x is greater than 5"
+else
+  puts "x is 5 or less"
+end
+
+# Loops
+i = 0
+while i < 10
+  puts i
+  i += 1
+end
+
+# Arrays
+numbers = [1, 2, 3, 4, 5]
+sum = numbers.reduce(0) { |acc, n| acc + n }
+puts "Sum: #{sum}"
+
+# Classes
+class Counter
+  def initialize
+    @count = 0
+  end
+  
+  def increment
+    @count += 1
+  end
+  
+  def value
+    @count
+  end
+end
+
+c = Counter.new
+c.increment()
+c.increment()
+puts c.value()
+
+# Method chaining
+result = [1, 2, 3, 4, 5]
+  .map { |n| n * 2 }
+  .select { |n| n > 4 }
+  .reduce(0) { |acc, n| acc + n }
+
+puts "Result: #{result}"

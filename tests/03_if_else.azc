@@ -1,0 +1,8 @@
+# Test 03: If/Else Control Flow
+let x = 5
+
+if x > 3
+    puts "x > 3"
+else
+    puts "x <= 3"
+end

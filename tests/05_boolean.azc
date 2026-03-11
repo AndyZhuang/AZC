@@ -1,0 +1,17 @@
+# Test 05: Boolean Expressions
+let a = true
+let b = false
+
+if a and b
+    puts "Both true"
+else
+    puts "Not both true"
+end
+
+if a or b
+    puts "At least one true"
+end
+
+if not b
+    puts "b is false"
+end

@@ -1,0 +1,6 @@
+# Test: Functions
+def greet
+    puts "Hello from function"
+end
+
+greet

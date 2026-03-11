@@ -1,0 +1,11 @@
+# Test 02: Function Definitions
+def greet
+    puts "Hello from function"
+end
+
+def add(a)
+    result = a + 5
+    return result
+end
+
+greet
