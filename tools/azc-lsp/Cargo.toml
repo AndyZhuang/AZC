@@ -1,0 +1,20 @@
+[package]
+name = "azc-lsp"
+version = "0.1.0"
+edition = "2021"
+description = "Language Server for AZC"
+authors = ["AZC Team"]
+
+[dependencies]
+lsp-server = "0.7"
+lsp-types = "0.95"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+crossbeam-channel = "0.5"
+log = "0.4"
+env_logger = "0.10"
+
+[[bin]]
+name = "azc-lsp"
+path = "src/main.rs"

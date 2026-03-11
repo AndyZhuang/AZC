@@ -1,0 +1,16 @@
+[package]
+name = "azc-repl"
+version = "0.1.0"
+edition = "2021"
+description = "REPL for AZC"
+authors = ["AZC Team"]
+
+[dependencies]
+rustyline = "12.0"
+colored = "2.0"
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+
+[[bin]]
+name = "azc-repl"
+path = "src/main.rs"
