@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
 
-**AZC** (AbstraZed Control) is a new programming language that combines **Rust's safety guarantees** with **Ruby's expressive syntax**. Originally designed for industrial control systems (SCADA/DCS), AZC aims to become a general-purpose language.
+**AZC** (Agile Zest Code) is a new programming language that combines **Rust's safety guarantees** with **Ruby's expressive syntax**. Originally designed for industrial control systems (SCADA/DCS), AZC aims to become a general-purpose language.
 
 ## ✨ Features
 
@@ -68,7 +68,7 @@ end
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/azc.git
+git clone https://github.com/andyzhuang/azc.git
 cd azc
 
 # Build the compiler
