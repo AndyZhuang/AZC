@@ -1,0 +1,13 @@
+# Test enums (v0.3.0)
+
+enum Color
+    Red
+    Green
+    Blue
+end
+
+def print_color()
+    puts "Color enum defined"
+end
+
+print_color()

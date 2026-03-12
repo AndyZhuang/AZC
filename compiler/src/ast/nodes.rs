@@ -30,6 +30,7 @@ pub enum Statement {
         name: String,
         type_annotation: Option<String>,
         value: Option<Expression>,
+        mutable: bool,
     },
 
     /// Assignment
@@ -44,6 +45,7 @@ pub enum Statement {
     /// Function definition
     Function {
         name: String,
+        type_params: Vec<String>,
         params: Vec<(String, Option<String>)>,
         return_type: Option<String>,
         body: Vec<Statement>,
@@ -65,23 +67,110 @@ pub enum Statement {
         body: Vec<Statement>,
     },
 
+    /// For loop
+    For {
+        var: String,
+        iterable: Expression,
+        body: Vec<Statement>,
+    },
+
+    /// Match expression/statement
+    Match {
+        value: Expression,
+        arms: Vec<MatchArm>,
+    },
+
     /// Struct definition
     Struct {
         name: String,
+        type_params: Vec<String>,
         fields: Vec<(String, String)>,
     },
 
     /// Enum definition
     Enum {
         name: String,
-        variants: Vec<(String, Option<Vec<String>>)>,
+        type_params: Vec<String>,
+        variants: Vec<EnumVariant>,
+    },
+
+    /// Trait definition
+    Trait {
+        name: String,
+        type_params: Vec<String>,
+        methods: Vec<TraitMethod>,
     },
 
     /// Impl block
     Impl {
+        trait_name: Option<String>,
+        trait_args: Vec<String>,
         target: String,
+        type_params: Vec<String>,
         methods: Vec<Statement>,
     },
+
+    /// Type alias
+    TypeAlias {
+        name: String,
+        type_params: Vec<String>,
+        target: String,
+    },
+
+    /// Use statement
+    Use { path: String, alias: Option<String> },
+}
+
+/// Enum variant
+#[derive(Debug, Clone)]
+pub struct EnumVariant {
+    pub name: String,
+    pub fields: Option<Vec<String>>,
+}
+
+/// Trait method
+#[derive(Debug, Clone)]
+pub struct TraitMethod {
+    pub name: String,
+    pub params: Vec<(String, Option<String>)>,
+    pub return_type: Option<String>,
+    pub body: Option<Vec<Statement>>,
+}
+
+/// Match arm
+#[derive(Debug, Clone)]
+pub struct MatchArm {
+    pub pattern: Pattern,
+    pub guard: Option<Expression>,
+    pub body: Expression,
+}
+
+/// Patterns for matching
+#[derive(Debug, Clone)]
+pub enum Pattern {
+    Wildcard,
+    Variable(String),
+    Literal(Literal),
+    Tuple(Vec<Pattern>),
+    Array {
+        elements: Vec<Pattern>,
+        rest: Option<Box<Pattern>>,
+    },
+    Struct {
+        name: String,
+        fields: Vec<(String, Pattern)>,
+    },
+    Enum {
+        name: String,
+        variant: String,
+        args: Option<Vec<Pattern>>,
+    },
+    Range {
+        start: Box<Pattern>,
+        end: Box<Pattern>,
+        inclusive: bool,
+    },
+    Or(Vec<Pattern>),
 }
 
 /// Expressions
@@ -92,6 +181,9 @@ pub enum Expression {
 
     /// Variable reference
     Variable(String),
+
+    /// Path (e.g., Option::Some)
+    Path(Vec<String>),
 
     /// Binary operation
     Binary {
@@ -109,6 +201,7 @@ pub enum Expression {
     /// Function call
     Call {
         func: Box<Expression>,
+        type_args: Vec<String>,
         args: Vec<Expression>,
     },
 
@@ -116,6 +209,7 @@ pub enum Expression {
     MethodCall {
         object: Box<Expression>,
         method: String,
+        type_args: Vec<String>,
         args: Vec<Expression>,
     },
 
@@ -136,6 +230,9 @@ pub enum Expression {
 
     /// Tuple literal
     Tuple(Vec<Expression>),
+
+    /// Hash/Map literal
+    Hash(Vec<(Expression, Expression)>),
 
     /// Reference
     Reference {
@@ -165,7 +262,7 @@ pub enum Expression {
         arms: Vec<MatchArm>,
     },
 
-    /// Lambda
+    /// Lambda/closure
     Lambda {
         params: Vec<(String, Option<String>)>,
         body: Box<Expression>,
@@ -174,8 +271,35 @@ pub enum Expression {
     /// Struct instantiation
     StructInstantiation {
         name: String,
+        type_args: Vec<String>,
         fields: Vec<(String, Expression)>,
     },
+
+    /// Enum instantiation
+    EnumInstantiation {
+        name: String,
+        variant: String,
+        args: Vec<Expression>,
+    },
+
+    /// Try expression (error propagation)
+    Try(Box<Expression>),
+
+    /// Range expression
+    Range {
+        start: Option<Box<Expression>>,
+        end: Option<Box<Expression>>,
+        inclusive: bool,
+    },
+
+    /// Cast expression
+    Cast {
+        expr: Box<Expression>,
+        target: String,
+    },
+
+    /// Type annotation
+    TypeAnnotation { expr: Box<Expression>, ty: String },
 }
 
 /// Literal values
@@ -230,6 +354,10 @@ pub enum BinaryOp {
     BitXor,
     Shl,
     Shr,
+
+    // Range
+    Range,
+    RangeInclusive,
 }
 
 impl fmt::Display for BinaryOp {
@@ -253,6 +381,8 @@ impl fmt::Display for BinaryOp {
             BinaryOp::BitXor => write!(f, "^"),
             BinaryOp::Shl => write!(f, "<<"),
             BinaryOp::Shr => write!(f, ">>"),
+            BinaryOp::Range => write!(f, ".."),
+            BinaryOp::RangeInclusive => write!(f, "..="),
         }
     }
 }
@@ -277,38 +407,6 @@ impl fmt::Display for UnaryOp {
             UnaryOp::RefMut => write!(f, "&mut"),
         }
     }
-}
-
-/// Match arm
-#[derive(Debug, Clone)]
-pub struct MatchArm {
-    pub pattern: Pattern,
-    pub guard: Option<Expression>,
-    pub body: Expression,
-}
-
-/// Patterns
-#[derive(Debug, Clone)]
-pub enum Pattern {
-    Wildcard,
-    Variable(String),
-    Literal(Literal),
-    Tuple(Vec<Pattern>),
-    Struct {
-        name: String,
-        fields: Vec<(String, Pattern)>,
-    },
-    Enum {
-        name: String,
-        variant: String,
-        fields: Option<Vec<Pattern>>,
-    },
-    Range {
-        start: Literal,
-        end: Literal,
-        inclusive: bool,
-    },
-    Or(Vec<Pattern>),
 }
 
 /// Type representation in AST

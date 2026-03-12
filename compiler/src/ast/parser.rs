@@ -88,10 +88,16 @@ impl Parser {
             _ => self.parse_expr_statement(),
         }
     }
-
     fn parse_let(&mut self) -> Result<Option<Statement>, ParseError> {
         self.consume_word("let")?;
         self.skip_whitespace();
+
+        // Check for mutable keyword
+        let mutable = self.check_word("mut");
+        if mutable {
+            self.consume_word("mut")?;
+            self.skip_whitespace();
+        }
 
         let name = self.parse_identifier()?;
         self.skip_whitespace();
@@ -118,6 +124,7 @@ impl Parser {
             name,
             type_annotation,
             value,
+            mutable,
         }))
     }
 
@@ -161,6 +168,7 @@ impl Parser {
 
         Ok(Some(Statement::Function {
             name,
+            type_params: Vec::new(), // TODO: Parse type parameters <T, U>
             params,
             return_type,
             body,
@@ -272,7 +280,11 @@ impl Parser {
             self.consume_word("end")?;
         }
 
-        Ok(Some(Statement::Struct { name, fields }))
+        Ok(Some(Statement::Struct { 
+            name, 
+            type_params: Vec::new(), // TODO: Parse type parameters
+            fields 
+        }))
     }
 
     fn parse_enum(&mut self) -> Result<Option<Statement>, ParseError> {
@@ -321,7 +333,13 @@ impl Parser {
             self.consume_word("end")?;
         }
 
-        Ok(Some(Statement::Enum { name, variants }))
+        Ok(Some(Statement::Enum { 
+            name, 
+            type_params: Vec::new(), // TODO: Parse type parameters
+            variants: variants.into_iter().map(|(name, fields)| {
+                crate::ast::nodes::EnumVariant { name, fields }
+            }).collect()
+        }))
     }
 
     fn parse_impl(&mut self) -> Result<Option<Statement>, ParseError> {
@@ -343,7 +361,13 @@ impl Parser {
             self.consume_word("end")?;
         }
 
-        Ok(Some(Statement::Impl { target, methods }))
+        Ok(Some(Statement::Impl { 
+            trait_name: None, // TODO: Parse trait name for trait impls
+            trait_args: Vec::new(),
+            target, 
+            type_params: Vec::new(), // TODO: Parse type parameters
+            methods 
+        }))
     }
 
     fn parse_expr_statement(&mut self) -> Result<Option<Statement>, ParseError> {
@@ -564,6 +588,7 @@ impl Parser {
                 expr = Expression::Call {
                     func: Box::new(expr),
                     args,
+                    type_args: Vec::new(), // TODO: Parse type arguments
                 };
             } else if self.check('.') {
                 self.advance();
@@ -578,6 +603,7 @@ impl Parser {
                         object: Box::new(expr),
                         method: field,
                         args,
+                        type_args: Vec::new(), // TODO: Parse type arguments
                     };
                 } else {
                     expr = Expression::Field {
@@ -1008,8 +1034,281 @@ impl Parser {
             column: self.column,
         }
     }
+    
+    // === New v0.3.0 parsing methods ===
+    
+    fn parse_for(&mut self) -> Result<Option<Statement>, ParseError> {
+        self.consume_word("for")?;
+        self.skip_whitespace();
+        
+        let var = self.parse_identifier()?;
+        self.skip_whitespace();
+        self.consume_word("in")?;
+        self.skip_whitespace();
+        
+        let iterable = self.parse_expression()?;
+        self.skip_whitespace();
+        
+        let mut body = Vec::new();
+        while !self.is_at_end() && !self.check_word("end") {
+            if let Some(stmt) = self.parse_statement()? {
+                body.push(stmt);
+            }
+        }
+        
+        if !self.is_at_end() {
+            self.consume_word("end")?;
+        }
+        
+        Ok(Some(Statement::For { var, iterable, body }))
+    }
+    
+    fn parse_match(&mut self) -> Result<Option<Statement>, ParseError> {
+        self.consume_word("match")?;
+        self.skip_whitespace();
+        
+        let value = self.parse_expression()?;
+        self.skip_whitespace();
+        
+        let mut arms = Vec::new();
+        
+        while !self.is_at_end() && !self.check_word("end") {
+            self.skip_whitespace_and_comments();
+            if self.check_word("end") {
+                break;
+            }
+            
+            let pattern = self.parse_pattern()?;
+            self.skip_whitespace();
+            
+            let guard = if self.check_word("if") {
+                self.consume_word("if")?;
+                self.skip_whitespace();
+                Some(self.parse_expression()?)
+            } else {
+                None
+            };
+            
+            self.skip_whitespace();
+            let body = self.parse_expression()?;
+            self.skip_whitespace();
+            
+            arms.push(MatchArm { pattern, guard, body });
+        }
+        
+        if !self.is_at_end() {
+            self.consume_word("end")?;
+        }
+        
+        Ok(Some(Statement::Match { value, arms }))
+    }
+    
+    fn parse_pattern(&mut self) -> Result<Pattern, ParseError> {
+        self.skip_whitespace();
+        
+        // Wildcard
+        if self.check('_') {
+            self.advance();
+            return Ok(Pattern::Wildcard);
+        }
+        
+        // Variable
+        if self.check_alpha() {
+            let name = self.parse_identifier()?;
+            self.skip_whitespace();
+            
+            // Check for struct/enum pattern
+            if self.check('{') {
+                // Struct pattern
+                self.advance();
+                let mut fields = Vec::new();
+                while !self.check('}') {
+                    self.skip_whitespace();
+                    let field_name = self.parse_identifier()?;
+                    self.skip_whitespace();
+                    self.expect(':')?;
+                    self.skip_whitespace();
+                    let field_pattern = self.parse_pattern()?;
+                    fields.push((field_name, field_pattern));
+                    self.skip_whitespace();
+                    if self.check(',') {
+                        self.advance();
+                    }
+                }
+                self.expect('}')?;
+                return Ok(Pattern::Struct { name, fields });
+            }
+            
+            if self.check_str("::") {
+                // Enum pattern
+                self.advance();
+                self.advance();
+                let variant = self.parse_identifier()?;
+                self.skip_whitespace();
+                
+                let args = if self.check('(') {
+                    self.advance();
+                    let mut patterns = Vec::new();
+                    while !self.check(')') {
+                        self.skip_whitespace();
+                        patterns.push(self.parse_pattern()?);
+                        self.skip_whitespace();
+                        if self.check(',') {
+                            self.advance();
+                        }
+                    }
+                    self.expect(')')?;
+                    Some(patterns)
+                } else {
+                    None
+                };
+                
+                return Ok(Pattern::Enum { name, variant, args });
+            }
+            
+            return Ok(Pattern::Variable(name));
+        }
+        
+        // Literal
+        if self.check_digit() || self.check('"') || self.check('\'') {
+            if let Expression::Literal(lit) = self.parse_primary()? {
+                return Ok(Pattern::Literal(lit));
+            }
+        }
+        
+        // Tuple
+        if self.check('(') {
+            self.advance();
+            let mut elements = Vec::new();
+            while !self.check(')') {
+                self.skip_whitespace();
+                elements.push(self.parse_pattern()?);
+                self.skip_whitespace();
+                if self.check(',') {
+                    self.advance();
+                }
+            }
+            self.expect(')')?;
+            return Ok(Pattern::Tuple(elements));
+        }
+        
+        // Array
+        if self.check('[') {
+            self.advance();
+            let mut elements = Vec::new();
+            let mut rest = None;
+            
+            while !self.check(']') {
+                self.skip_whitespace();
+                
+                if self.check_str("..") {
+                    self.advance();
+                    self.advance();
+                    self.skip_whitespace();
+                    if !self.check(']') {
+                        rest = Some(Box::new(self.parse_pattern()?));
+                    }
+                    break;
+                }
+                
+                elements.push(self.parse_pattern()?);
+                self.skip_whitespace();
+                if self.check(',') {
+                    self.advance();
+                }
+            }
+            self.expect(']')?;
+            return Ok(Pattern::Array { elements, rest });
+        }
+        
+        Err(self.error("Expected pattern"))
+    }
+    
+    fn parse_trait(&mut self) -> Result<Option<Statement>, ParseError> {
+        self.consume_word("trait")?;
+        self.skip_whitespace();
+        
+        let name = self.parse_identifier()?;
+        self.skip_whitespace();
+        
+        // Type parameters
+        let type_params = if self.check('<') {
+            self.advance();
+            let mut params = Vec::new();
+            while !self.check('>') {
+                self.skip_whitespace();
+                params.push(self.parse_identifier()?);
+                self.skip_whitespace();
+                if self.check(',') {
+                    self.advance();
+                }
+            }
+            self.expect('>')?;
+            self.skip_whitespace();
+            params
+        } else {
+            Vec::new()
+        };
+        
+        let mut methods = Vec::new();
+        
+        while !self.is_at_end() && !self.check_word("end") {
+            if let Some(Statement::Function { name, params, return_type, body, .. }) = self.parse_function()? {
+                methods.push(TraitMethod {
+                    name,
+                    params,
+                    return_type,
+                    body: Some(body),
+                });
+            }
+            self.skip_whitespace();
+        }
+        
+        if !self.is_at_end() {
+            self.consume_word("end")?;
+        }
+        
+        Ok(Some(Statement::Trait { name, type_params, methods }))
+    }
+    
+    fn parse_lambda(&mut self) -> Result<Expression, ParseError> {
+        self.expect('|')?;
+        
+        let mut params = Vec::new();
+        
+        while !self.check('|') {
+            self.skip_whitespace();
+            let name = self.parse_identifier()?;
+            self.skip_whitespace();
+            
+            let ty = if self.check(':') {
+                self.advance();
+                self.skip_whitespace();
+                Some(self.parse_type()?)
+            } else {
+                None
+            };
+            
+            params.push((name, ty));
+            self.skip_whitespace();
+            
+            if self.check(',') {
+                self.advance();
+            }
+        }
+        
+        self.expect('|')?;
+        self.skip_whitespace();
+        
+        let body = Box::new(self.parse_expression()?);
+        
+        Ok(Expression::Lambda { params, body })
+    }
+    
+    fn check_alpha(&self) -> bool {
+        self.source.get(self.pos).map_or(false, |c| c.is_alphabetic() || *c == '_')
+    }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;

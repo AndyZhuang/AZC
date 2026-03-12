@@ -86,6 +86,7 @@ fn check_statement_types(checker: &mut TypeChecker, stmt: &Statement) -> Result<
             name,
             type_annotation,
             value,
+            mutable: _,
         } => {
             if let Some(val) = value {
                 let val_ty = checker.check_expr(&expr_to_check_expr(val))?;
@@ -131,6 +132,7 @@ fn check_statement_types(checker: &mut TypeChecker, stmt: &Statement) -> Result<
         }
         Statement::Function {
             name,
+            type_params: _,
             params,
             return_type,
             body,
@@ -143,6 +145,8 @@ fn check_statement_types(checker: &mut TypeChecker, stmt: &Statement) -> Result<
         Statement::Struct { .. } | Statement::Enum { .. } | Statement::Impl { .. } => {
             // Type definitions
         }
+        // Handle all other statement types
+        _ => {}
     }
     Ok(())
 }
@@ -163,7 +167,7 @@ fn expr_to_check_expr(expr: &Expression) -> types::checker::Expr {
             op: unaryop_to_string(op),
             operand: Box::new(expr_to_check_expr(operand)),
         },
-        Expression::Call { func, args } => Expr::Call {
+        Expression::Call { func, args, type_args: _ } => Expr::Call {
             func: Box::new(expr_to_check_expr(func)),
             args: args.iter().map(|a| expr_to_check_expr(a)).collect(),
         },
@@ -237,6 +241,8 @@ fn binop_to_string(op: &BinaryOp) -> String {
         BinaryOp::BitXor => "^",
         BinaryOp::Shl => "<<",
         BinaryOp::Shr => ">>",
+        BinaryOp::Range => "..",
+        BinaryOp::RangeInclusive => "..=",
     }
     .to_string()
 }
@@ -352,6 +358,7 @@ fn gen_stmt(out: &mut String, stmt: &Statement, indent: usize) -> Result<(), Str
             name,
             type_annotation: _,
             value,
+            mutable: _,
         } => {
             if let Some(val) = value {
                 let val_code = gen_expr(val)?;
@@ -416,6 +423,7 @@ fn gen_stmt(out: &mut String, stmt: &Statement, indent: usize) -> Result<(), Str
 
         Statement::Function {
             name,
+            type_params: _,
             params: _,
             return_type: _,
             body,
@@ -429,7 +437,7 @@ fn gen_stmt(out: &mut String, stmt: &Statement, indent: usize) -> Result<(), Str
             out.push_str(&format!("{}}}\n\n", ind));
         }
 
-        Statement::Struct { name, fields } => {
+        Statement::Struct { name, type_params: _, fields } => {
             out.push_str(&format!("{}typedef struct {{\n", ind));
             for (field_name, field_type) in fields {
                 out.push_str(&format!("    {} {};\n", field_type, field_name));
@@ -437,10 +445,10 @@ fn gen_stmt(out: &mut String, stmt: &Statement, indent: usize) -> Result<(), Str
             out.push_str(&format!("{}}} {};\n\n", ind, name));
         }
 
-        Statement::Enum { name, variants } => {
+        Statement::Enum { name, type_params: _, variants } => {
             out.push_str(&format!("{}typedef enum {{\n", ind));
-            for (i, (variant_name, _)) in variants.iter().enumerate() {
-                out.push_str(&format!("    {}_{} = {},\n", name, variant_name, i));
+            for (i, variant) in variants.iter().enumerate() {
+                out.push_str(&format!("    {}_{} = {},\n", name, variant.name, i));
             }
             out.push_str(&format!("{}}} {};\n\n", ind, name));
         }
@@ -448,6 +456,8 @@ fn gen_stmt(out: &mut String, stmt: &Statement, indent: usize) -> Result<(), Str
         Statement::Impl { .. } => {
             // Impl blocks are handled at compile time
         }
+        // Handle all other statement types
+        _ => {}
     }
 
     Ok(())
@@ -501,7 +511,7 @@ fn gen_expr(expr: &Expression) -> Result<String, String> {
             })
         }
 
-        Expression::Call { func, args } => {
+        Expression::Call { func, args, type_args: _ } => {
             let func_code = gen_expr(func)?;
             let args_code: Vec<String> = args
                 .iter()
@@ -515,6 +525,7 @@ fn gen_expr(expr: &Expression) -> Result<String, String> {
             object,
             method,
             args,
+            type_args: _,
         } => {
             let obj_code = gen_expr(object)?;
             let args_code: Vec<String> = args
@@ -603,7 +614,7 @@ fn gen_expr(expr: &Expression) -> Result<String, String> {
 
         Expression::Lambda { .. } => Ok("/* lambda expression */".to_string()),
 
-        Expression::StructInstantiation { name, fields } => {
+        Expression::StructInstantiation { name, type_args: _, fields } => {
             let fields_code: Vec<String> = fields
                 .iter()
                 .map(|(f, v)| {
@@ -614,8 +625,10 @@ fn gen_expr(expr: &Expression) -> Result<String, String> {
 
             Ok(format!("({}) {{ {} }}", name, fields_code.join(", ")))
         }
+        // Handle all other expression types
+        _ => Ok("/* unknown expression */".to_string()),
+        }
     }
-}
 
 /// Compile error
 #[derive(Debug)]

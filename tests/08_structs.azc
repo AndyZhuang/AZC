@@ -1,0 +1,12 @@
+# Test structs (v0.3.0)
+
+struct Point
+    x: Int
+    y: Int
+end
+
+def make_point()
+    puts "Creating point"
+end
+
+make_point()

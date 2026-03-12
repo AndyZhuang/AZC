@@ -93,6 +93,7 @@ impl SafetyAnalyzer {
                 name,
                 type_annotation,
                 value,
+                mutable: _, // Ignore mutability for type checking
             } => {
                 if let Some(val) = value {
                     let _ = self.check_expression_types(val)?;
@@ -144,6 +145,8 @@ impl SafetyAnalyzer {
                 Ok(())
             }
             Statement::Struct { .. } | Statement::Enum { .. } | Statement::Impl { .. } => Ok(()),
+            // Handle all other statement types
+            _ => Ok(()),
         }
     }
 
@@ -163,7 +166,7 @@ impl SafetyAnalyzer {
                 let _ = self.check_expression_types(operand)?;
                 Ok(Type::default_int())
             }
-            Expression::Call { func, args } => {
+            Expression::Call { func, args, type_args: _ } => {
                 let _ = self.check_expression_types(func)?;
                 for arg in args {
                     let _ = self.check_expression_types(arg)?;
@@ -254,6 +257,8 @@ impl SafetyAnalyzer {
                 }
                 Ok(Type::Nil)
             }
+            // Handle all other expression types
+            _ => Ok(Type::Nil),
         }
     }
 
@@ -332,6 +337,8 @@ impl SafetyAnalyzer {
                 Ok(())
             }
             Statement::Struct { .. } | Statement::Enum { .. } | Statement::Impl { .. } => Ok(()),
+            // Handle all other statement types
+            _ => Ok(()),
         }
     }
 
@@ -370,7 +377,7 @@ impl SafetyAnalyzer {
                 Ok(())
             }
 
-            Expression::Call { func, args } => {
+            Expression::Call { func, args, type_args: _ } => {
                 self.check_expression_ownership(func)?;
                 for arg in args {
                     self.check_expression_ownership(arg)?;
@@ -460,6 +467,7 @@ impl SafetyAnalyzer {
                 }
                 Ok(())
             }
+            _ => Ok(()),
         }
     }
 }

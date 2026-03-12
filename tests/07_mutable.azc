@@ -1,0 +1,6 @@
+# Test mutable variables (v0.3.0)
+
+let mut counter = 0
+counter = 1
+counter = 2
+puts counter
