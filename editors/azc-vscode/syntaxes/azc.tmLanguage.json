@@ -1,0 +1,210 @@
+{
+  "name": "AZC",
+  "scopeName": "source.azc",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "##constants" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#identifiers" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.azc",
+          "match": "\\b(if|else|elsif|end|while|for|in|return|break|next|match|when)\\b"
+        },
+        {
+          "name": "keyword.declaration.azc",
+          "match": "\\b(let|def|class|struct|enum|impl|trait|type|macro)\\b"
+        },
+        {
+          "name": "keyword.other.azc",
+          "match": "\\b(async|await|unsafe|extern|use|mod|pub|mut|ref|self|Self)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.azc",
+          "match": "\\b(and|or|not)\\b"
+        },
+        {
+          "name": "storage.modifier.azc",
+          "match": "@(sil|deadline|max_stack|watchdog|safe|unsafe)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "entity.name.type.azc",
+          "match": "\\b([A-Z][a-zA-Z0-9_]*)\\b"
+        },
+        {
+          "name": "support.type.primitive.azc",
+          "match": "\\b(Int|Float|String|Bool|Char|Array|Map|Set|Option|Result|Future|Pointer|Void|Nil)\\b"
+        },
+        {
+          "name": "support.type.numeric.azc",
+          "match": "\\b(I8|I16|I32|I64|I128|ISize|U8|U16|U32|U64|U128|USize|F32|F64)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.azc",
+          "match": "\\b(true|false|nil)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.azc",
+          "begin": "\"",
+          "end": "\"",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.azc" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.azc" }
+          },
+          "patterns": [
+            {
+              "name": "constant.character.escape.azc",
+              "match": "\\\\[nrt\"'\\\\0]"
+            },
+            {
+              "name": "meta.interpolation.azc",
+              "match": "#\\{([^}]*)\\}",
+              "captures": {
+                "0": { "name": "punctuation.section.interpolation.azc" },
+                "1": { "patterns": [{ "include": "$base" }] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.azc",
+          "begin": "'",
+          "end": "'",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.azc" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.azc" }
+          },
+          "patterns": [
+            {
+              "name": "constant.character.escape.azc",
+              "match": "\\\\[nrt\"'\\\\0]"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.azc",
+          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*([eE][+-]?[0-9_]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.hex.azc",
+          "match": "\\b0[xX][0-9a-fA-F_]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.binary.azc",
+          "match": "\\b0[bB][01_]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.octal.azc",
+          "match": "\\b0[oO][0-7_]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.decimal.azc",
+          "match": "\\b[0-9][0-9_]*\\b"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.azc",
+          "match": "#.*$"
+        },
+        {
+          "name": "comment.block.documentation.azc",
+          "begin": "=begin",
+          "end": "=end",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.comment.begin.azc" }
+          },
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.comment.end.azc" }
+          }
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "name": "entity.name.function.azc",
+          "match": "\\b([a-z_][a-z0-9_]*)\\s*(?=\\()"
+        },
+        {
+          "name": "variable.other.azc",
+          "match": "\\b[a-z_][a-z0-9_]*\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.azc",
+          "match": "[+\\-*/%]"
+        },
+        {
+          "name": "keyword.operator.comparison.azc",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.assignment.azc",
+          "match": "(=|\\+=|-=|\\*=|/=|%=)"
+        },
+        {
+          "name": "keyword.operator.logical.azc",
+          "match": "(&&|\\|\\|!)"
+        },
+        {
+          "name": "keyword.operator.bitwise.azc",
+          "match": "(&|\\||\\^|~|<<|>>)"
+        },
+        {
+          "name": "keyword.operator.other.azc",
+          "match": "(=>|->|\\.\\.|\\?)"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.azc",
+          "match": "(,|;|:)"
+        },
+        {
+          "name": "punctuation.bracket.azc",
+          "match": "(\\{|\\}|\\[|\\]|\\(|\\))"
+        },
+        {
+          "name": "punctuation.accessor.azc",
+          "match": "(\\.|::)"
+        }
+      ]
+    }
+  }
+}

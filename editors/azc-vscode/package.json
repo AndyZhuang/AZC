@@ -1,0 +1,174 @@
+{
+  "name": "azc",
+  "displayName": "AZC Language Support",
+  "description": "Language support for AZC - A safe programming language for industrial control systems",
+  "version": "0.5.0",
+  "publisher": "azc-lang",
+  "license": "MIT",
+  "icon": "icons/azc.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Language Packs",
+    "Debuggers",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "azc",
+    "programming language",
+    "industrial control",
+    "safety",
+    "SCADA",
+    "DCS"
+  ],
+  "activationEvents": [
+    "onLanguage:azc",
+    "onCommand:azc.compile",
+    "onCommand:azc.run"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "azc",
+        "aliases": ["AZC", "azc"],
+        "extensions": [".azc"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/azc-file-light.svg",
+          "dark": "./icons/azc-file-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "azc",
+        "scopeName": "source.azc",
+        "path": "./syntaxes/azc.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "azc.compile",
+        "title": "AZC: Compile to C"
+      },
+      {
+        "command": "azc.run",
+        "title": "AZC: Run Current File"
+      },
+      {
+        "command": "azc.newProject",
+        "title": "AZC: Create New Project"
+      },
+      {
+        "command": "azc.showSafetyReport",
+        "title": "AZC: Show Safety Report"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == azc",
+          "command": "azc.compile",
+          "group": "azc@1"
+        },
+        {
+          "when": "resourceLangId == azc",
+          "command": "azc.run",
+          "group": "azc@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AZC",
+      "properties": {
+        "azc.compilerPath": {
+          "type": "string",
+          "default": "azc",
+          "description": "Path to the AZC compiler executable"
+        },
+        "azc.formatOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Format AZC files on save"
+        },
+        "azc.lintOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lint AZC files on save"
+        },
+        "azc.safetyCheckOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run safety checks on save"
+        },
+        "azc.showSafetyAnnotations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inline safety annotations"
+        }
+      }
+    },
+    "taskDefinitions": [
+      {
+        "type": "azc",
+        "required": ["command"],
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The AZC command to run"
+          },
+          "file": {
+            "type": "string",
+            "description": "The AZC file to compile"
+          }
+        }
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "azc",
+        "owner": "azc",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+):\\s+(error|warning):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "@vscode/vsce": "^2.22.0",
+    "eslint": "^8.45.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azc-lang/azc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azc-lang/azc/issues"
+  },
+  "homepage": "https://azc.dev"
+}

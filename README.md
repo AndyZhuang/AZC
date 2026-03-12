@@ -1,7 +1,7 @@
 # AZC Programming Language
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.4.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.5.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Rust-1.70+-orange.svg" alt="Rust">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/safety-95%2F100-brightgreen.svg" alt="Safety Score">
@@ -245,6 +245,108 @@ simulator PLC_Tank_Controller
             sensor.level.set(15.0)
             assert(inlet_valve.open?)
 end
+```
+
+---
+
+## 🖥️ Editor Support (v0.5.0)
+
+AZC provides first-class editor support for popular IDEs and text editors.
+
+### VSCode Extension
+
+Install from the VSCode Marketplace or build from source:
+
+```bash
+cd editors/azc-vscode
+npm install
+npm run compile
+# Press F5 in VSCode to launch extension development host
+```
+
+**Features:**
+- ✅ Syntax highlighting
+- ✅ Bracket matching & auto-closing
+- ✅ Comment toggling
+- ✅ Auto-indentation
+- ✅ Code folding
+- ✅ Compile & Run commands
+- ✅ Diagnostics integration
+
+**Commands:**
+- `AZC: Compile to C` - Compile current file
+- `AZC: Run Current File` - Compile and run
+- `AZC: Create New Project` - Start new project
+- `AZC: Show Safety Report` - View safety analysis
+
+### Vim Plugin
+
+Install using your favorite plugin manager:
+
+```vim
+" vim-plug
+Plug 'azc-lang/azc-vim'
+
+" Vundle
+Plugin 'azc-lang/azc-vim'
+```
+
+**Features:**
+- ✅ Syntax highlighting
+- ✅ Auto-indentation
+- ✅ File detection
+- ✅ Commands: `:AZCCompile`, `:AZCRun`, `:AZCCheck`
+
+---
+
+## 🌐 Web Playground (v0.5.0)
+
+Try AZC online without installation: **[play.azc.dev](https://play.azc.dev)**
+
+Run the playground locally:
+
+```bash
+# Start backend
+cd playground/backend && cargo run
+
+# Start frontend (in another terminal)
+cd playground/frontend && npm start
+```
+
+**Features:**
+- ✅ Monaco editor with AZC syntax highlighting
+- ✅ Compile and run AZC code
+- ✅ View generated C code
+- ✅ Pre-loaded example programs
+- ✅ Share code via URL
+
+---
+
+## 📦 Package Registry (v0.5.0)
+
+Publish and share AZC packages: **[registry.azc.dev](https://registry.azc.dev)**
+
+### Publishing a Package
+
+```bash
+# Login to registry
+azc login
+
+# Publish your package
+azc publish
+```
+
+### Using Packages
+
+```toml
+# azc.toml
+[dependencies]
+azc-http = "0.1.0"
+azc-json = "0.2.0"
+```
+
+```bash
+azc install
 ```
 
 ---
@@ -674,6 +776,15 @@ AZC/
 │   ├── azc-repl/         # REPL
 │   ├── azc-viz/          # Safety visualization
 │   └── azc-sim/          # Industrial simulator
+├── editors/               # Editor plugins (v0.5.0)
+│   ├── azc-vscode/       # VSCode extension
+│   └── azc-vim/          # Vim plugin
+├── registry/              # Package registry (v0.5.0)
+│   ├── server/           # Registry server
+│   └── web/              # Registry web UI
+├── playground/            # Web playground (v0.5.0)
+│   ├── frontend/         # React app
+│   └── backend/          # Compile server
 ├── std/                   # Standard library
 │   ├── core.azc          # Core types
 │   └── io.azc            # I/O operations
@@ -684,6 +795,8 @@ AZC/
 ├── docs/                  # Documentation
 │   ├── AZC_LANGUAGE_DESIGN.md
 │   ├── AZC_VS_RUST_COMPARISON.md
+│   ├── AZC_v0.4.0_Design.md
+│   ├── AZC_v0.5.0_Design.md
 │   └── IMPROVEMENTS_AND_TOOLS_SUMMARY.md
 ├── README.md
 ├── LICENSE
@@ -742,12 +855,11 @@ azc-sim test --safety
 - [x] Macros
 - [x] Unsafe blocks
 - [x] FFI
-### v0.5.0 - Ecosystem
-- [ ] Package registry
-- [ ] VSCode extension
-- [ ] Vim/Emacs plugins
-- [ ] Web playground
-
+### v0.5.0 (Current) - Ecosystem
+- [x] Package registry
+- [x] VSCode extension
+- [x] Vim plugin
+- [x] Web playground
 ### v1.0 - Production
 - [ ] IEC 61508 certification
 - [ ] Full standard library
