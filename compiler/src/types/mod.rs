@@ -7,6 +7,7 @@
 //! - Type error reporting
 
 pub mod ast;
+pub mod async_;
 pub mod checker;
 pub mod env;
 pub mod generics;
@@ -15,6 +16,7 @@ pub mod patterns;
 pub mod traits;
 
 pub use ast::*;
+pub use async_::*;
 pub use checker::*;
 pub use env::*;
 pub use generics::*;

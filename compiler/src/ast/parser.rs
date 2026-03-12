@@ -78,12 +78,16 @@ impl Parser {
         match keyword.as_str() {
             "let" => self.parse_let(),
             "def" => self.parse_function(),
+            "async" => self.parse_async_function(),
             "if" => self.parse_if_statement(),
             "while" => self.parse_while(),
             "return" => self.parse_return(),
             "class" | "struct" => self.parse_struct(),
             "enum" => self.parse_enum(),
             "impl" => self.parse_impl(),
+            "unsafe" => self.parse_unsafe_block(),
+            "macro" => self.parse_macro(),
+            "extern" => self.parse_extern(),
             "end" => Ok(None),
             _ => self.parse_expr_statement(),
         }
@@ -382,8 +386,92 @@ impl Parser {
                 value,
             }))
         } else {
+            // Check for Ruby-style function call without parentheses
+            // e.g., puts "hello" instead of puts("hello")
+            let expr = self.try_parse_call_without_parens(expr)?;
             Ok(Some(Statement::Expr(expr)))
         }
+    }
+
+    /// Try to parse a function call without parentheses (Ruby-style)
+    /// e.g., puts "hello" or print x, y
+    fn try_parse_call_without_parens(&mut self, expr: Expression) -> Result<Expression, ParseError> {
+        // Only apply to simple identifiers (variable expressions)
+        if let Expression::Variable(name) = &expr {
+            self.skip_whitespace();
+            
+            // Check if next token looks like an argument
+            // Arguments can be: strings, numbers, identifiers, etc.
+            if self.looks_like_argument() {
+                let mut args = Vec::new();
+                
+                // Parse the first argument
+                args.push(self.parse_argument_value()?);
+                
+                // Parse additional arguments separated by commas
+                loop {
+                    self.skip_whitespace();
+                    if !self.check(',') {
+                        break;
+                    }
+                    self.advance();
+                    self.skip_whitespace();
+                    
+                    if self.looks_like_argument() {
+                        args.push(self.parse_argument_value()?);
+                    } else {
+                        break;
+                    }
+                }
+                
+                return Ok(Expression::Call {
+                    func: Box::new(Expression::Variable(name.clone())),
+                    args,
+                    type_args: Vec::new(),
+                });
+            }
+        }
+        
+        Ok(expr)
+    }
+    
+    /// Check if the next token looks like a function argument
+    fn looks_like_argument(&self) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        
+        // Skip whitespace to check the actual next token
+        let mut pos = self.pos;
+        while pos < self.source.len() && self.source[pos].is_whitespace() {
+            pos += 1;
+        }
+        
+        if pos >= self.source.len() {
+            return false;
+        }
+        
+        let c = self.source[pos];
+        
+        // Arguments can start with:
+        // - String literal: "..."
+        // - Number: 0-9
+        // - Identifier: a-z, A-Z, _
+        // - Array: [
+        // - Parenthesized expression: (
+        c == '"' || c == '\'' || c.is_ascii_digit() || 
+        c.is_alphabetic() || c == '_' || c == '[' || c == '(' ||
+        c == '-' || c == '!' || c == '&'
+    }
+    
+    /// Parse a single argument value for function calls without parentheses
+    fn parse_argument_value(&mut self) -> Result<Expression, ParseError> {
+        self.skip_whitespace();
+        
+        // Stop at newline or end of line for simple arguments
+        let expr = self.parse_expression()?;
+        
+        Ok(expr)
     }
 
     fn parse_expression(&mut self) -> Result<Expression, ParseError> {
@@ -1304,6 +1392,132 @@ impl Parser {
         
         Ok(Expression::Lambda { params, body })
     }
+
+    // === v0.4.0 parsing methods ===
+
+    fn parse_async_function(&mut self) -> Result<Option<Statement>, ParseError> {
+        self.consume_word("async")?;
+        self.skip_whitespace();
+        self.consume_word("def")?;
+        self.skip_whitespace();
+        
+        let name = self.parse_identifier()?;
+        self.skip_whitespace();
+        
+        let params = if self.check('(') {
+            self.advance();
+            let p = self.parse_params()?;
+            self.expect(')')?;
+            p
+        } else {
+            Vec::new()
+        };
+        self.skip_whitespace();
+        
+        let return_type = if self.check_str("->") {
+            self.advance();
+            self.advance();
+            self.skip_whitespace();
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+        
+        let mut body = Vec::new();
+        while !self.is_at_end() && !self.check_word("end") {
+            if let Some(stmt) = self.parse_statement()? {
+                body.push(stmt);
+            }
+        }
+        
+        if !self.is_at_end() {
+            self.consume_word("end")?;
+        }
+        
+        Ok(Some(Statement::AsyncFunction {
+            name,
+            type_params: Vec::new(),
+            params,
+            return_type,
+            body,
+        }))
+    }
+
+    fn parse_unsafe_block(&mut self) -> Result<Option<Statement>, ParseError> {
+        self.consume_word("unsafe")?;
+        self.skip_whitespace();
+        
+        let mut body = Vec::new();
+        while !self.is_at_end() && !self.check_word("end") {
+            if let Some(stmt) = self.parse_statement()? {
+                body.push(stmt);
+            }
+        }
+        
+        if !self.is_at_end() {
+            self.consume_word("end")?;
+        }
+        
+        Ok(Some(Statement::Unsafe { body, reason: None }))
+    }
+
+    fn parse_macro(&mut self) -> Result<Option<Statement>, ParseError> {
+        self.consume_word("macro")?;
+        self.skip_whitespace();
+        
+        let name = self.parse_identifier()?;
+        self.skip_whitespace();
+        
+        // Parse parameters (simplified)
+        let params = Vec::new();
+        
+        let mut body = Vec::new();
+        while !self.is_at_end() && !self.check_word("end") {
+            if let Some(stmt) = self.parse_statement()? {
+                body.push(stmt);
+            }
+        }
+        
+        if !self.is_at_end() {
+            self.consume_word("end")?;
+        }
+        
+        Ok(Some(Statement::Macro { name, params, body }))
+    }
+
+    fn parse_extern(&mut self) -> Result<Option<Statement>, ParseError> {
+        self.consume_word("extern")?;
+        self.skip_whitespace();
+        
+        // Parse ABI string
+        let abi = if self.check('"') {
+            self.advance();
+            let mut abi_str = String::new();
+            while !self.is_at_end() && !self.check('"') {
+                abi_str.push(self.advance());
+            }
+            if !self.is_at_end() {
+                self.advance(); // consume closing quote
+            }
+            abi_str
+        } else {
+            "C".to_string()
+        };
+        self.skip_whitespace();
+        self.skip_whitespace();
+        
+        // Parse declarations (simplified - just skip to end)
+        let declarations = Vec::new();
+        while !self.is_at_end() && !self.check_word("end") {
+            self.advance();
+        }
+        
+        if !self.is_at_end() {
+            self.consume_word("end")?;
+        }
+        
+        Ok(Some(Statement::Extern { abi, declarations }))
+    }
     
     fn check_alpha(&self) -> bool {
         self.source.get(self.pos).map_or(false, |c| c.is_alphabetic() || *c == '_')
@@ -1335,5 +1549,57 @@ mod tests {
     fn test_parse_if() {
         let program = parse("if true\n  puts \"yes\"\nend").unwrap();
         assert_eq!(program.statements.len(), 1);
+    }
+
+    // === v0.4.0 tests ===
+
+    #[test]
+    fn test_parse_async_function() {
+        let program = parse("async def fetch()\n  \"data\"\nend").unwrap();
+        assert_eq!(program.statements.len(), 1);
+        match &program.statements[0] {
+            Statement::AsyncFunction { name, .. } => assert_eq!(name, "fetch"),
+            _ => panic!("Expected AsyncFunction"),
+        }
+    }
+
+    #[test]
+    fn test_parse_unsafe_block() {
+        let program = parse("unsafe\n  puts \"danger\"\nend").unwrap();
+        assert_eq!(program.statements.len(), 1);
+        match &program.statements[0] {
+            Statement::Unsafe { body, .. } => assert!(body.len() >= 1, "Unsafe body should have at least 1 statement"),
+            _ => panic!("Expected Unsafe"),
+        }
+    }
+
+    #[test]
+    fn test_parse_macro() {
+        let program = parse("macro say_hi\n  puts \"hi\"\nend").unwrap();
+        assert_eq!(program.statements.len(), 1);
+        match &program.statements[0] {
+            Statement::Macro { name, .. } => assert_eq!(name, "say_hi"),
+            _ => panic!("Expected Macro"),
+        }
+    }
+
+    #[test]
+    fn test_parse_extern() {
+        let program = parse("extern \"C\"\n  def puts(s: String) -> Int\nend").unwrap();
+        assert_eq!(program.statements.len(), 1);
+        match &program.statements[0] {
+            Statement::Extern { abi, .. } => assert_eq!(abi, "C"),
+            _ => panic!("Expected Extern"),
+        }
+    }
+
+    #[test]
+    fn test_parse_extern_default_abi() {
+        let program = parse("extern\nend").unwrap();
+        assert_eq!(program.statements.len(), 1);
+        match &program.statements[0] {
+            Statement::Extern { abi, .. } => assert_eq!(abi, "C"),
+            _ => panic!("Expected Extern"),
+        }
     }
 }

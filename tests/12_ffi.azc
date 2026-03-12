@@ -1,0 +1,9 @@
+# Test FFI extern (v0.4.0)
+
+# External function declarations
+extern "C"
+    def puts(s: String) -> Int
+    def strlen(s: String) -> Int
+end
+
+puts "FFI test"

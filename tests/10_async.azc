@@ -1,0 +1,9 @@
+# Test async function (v0.4.0)
+
+# Async function definition
+async def fetch_data() -> Future<String>
+    puts "Fetching..."
+    "data"
+end
+
+puts "async test"

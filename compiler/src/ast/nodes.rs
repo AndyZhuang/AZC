@@ -117,6 +117,36 @@ pub enum Statement {
         target: String,
     },
 
+    // ===== v0.4.0 Advanced Features =====
+
+    /// Async function definition
+    AsyncFunction {
+        name: String,
+        type_params: Vec<String>,
+        params: Vec<(String, Option<String>)>,
+        return_type: Option<String>,
+        body: Vec<Statement>,
+    },
+
+    /// Unsafe block
+    Unsafe {
+        body: Vec<Statement>,
+        reason: Option<String>,
+    },
+
+    /// Macro definition
+    Macro {
+        name: String,
+        params: Vec<MacroParam>,
+        body: Vec<Statement>,
+    },
+
+    /// Extern block for FFI
+    Extern {
+        abi: String,
+        declarations: Vec<ExternDecl>,
+    },
+
     /// Use statement
     Use { path: String, alias: Option<String> },
 }
@@ -173,6 +203,33 @@ pub enum Pattern {
     Or(Vec<Pattern>),
 }
 
+// ===== v0.4.0 Supporting Types =====
+
+/// Macro parameter
+#[derive(Debug, Clone)]
+pub struct MacroParam {
+    pub name: String,
+    pub kind: MacroParamKind,
+}
+
+/// Kind of macro parameter
+#[derive(Debug, Clone)]
+pub enum MacroParamKind {
+    Expr,
+    Ident,
+    Type,
+    Block,
+    Stmt,
+}
+
+/// External declaration for FFI
+#[derive(Debug, Clone)]
+pub struct ExternDecl {
+    pub name: String,
+    pub params: Vec<(String, Option<String>)>,
+    pub return_type: Option<String>,
+    pub is_variadic: bool,
+}
 /// Expressions
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -300,6 +357,30 @@ pub enum Expression {
 
     /// Type annotation
     TypeAnnotation { expr: Box<Expression>, ty: String },
+
+    // ===== v0.4.0 Advanced Features =====
+
+    /// Await expression
+    Await(Box<Expression>),
+
+    /// Async block
+    AsyncBlock(Vec<Statement>),
+
+    /// Macro call
+    MacroCall {
+        name: String,
+        args: Vec<Expression>,
+    },
+
+    /// Unsafe expression
+    UnsafeExpr(Box<Expression>),
+
+    /// Foreign function call (FFI)
+    ForeignCall {
+        abi: String,
+        name: String,
+        args: Vec<Expression>,
+    },
 }
 
 /// Literal values

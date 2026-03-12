@@ -456,6 +456,44 @@ fn gen_stmt(out: &mut String, stmt: &Statement, indent: usize) -> Result<(), Str
         Statement::Impl { .. } => {
             // Impl blocks are handled at compile time
         }
+
+        // ===== v0.4.0 Statement Generation =====
+
+        Statement::AsyncFunction { name, params: _, return_type: _, body, .. } => {
+            out.push_str(&format!("{}void azc_{}_async() {{\n", ind, name));
+            for s in body {
+                gen_stmt(out, s, indent + 1)?;
+            }
+            out.push_str(&format!("{}}}\n\n", ind));
+        }
+
+        Statement::Unsafe { body, reason } => {
+            out.push_str(&format!("{}/* UNSAFE BLOCK", ind));
+            if let Some(r) = reason {
+                out.push_str(&format!(" - {}", r));
+            }
+            out.push_str(" */\n");
+            out.push_str(&format!("{}{{\n", ind));
+            for s in body {
+                gen_stmt(out, s, indent + 1)?;
+            }
+            out.push_str(&format!("{}}}\n", ind));
+        }
+
+        Statement::Macro { name, params: _, body } => {
+            out.push_str(&format!("{}/* MACRO: {} */\n", ind, name));
+            for s in body {
+                gen_stmt(out, s, indent)?;
+            }
+        }
+
+        Statement::Extern { abi, declarations } => {
+            out.push_str(&format!("{}/* EXTERN \"{}\" */\n", ind, abi));
+            for decl in declarations {
+                out.push_str(&format!("{}// extern {}\n", ind, decl.name));
+            }
+        }
+
         // Handle all other statement types
         _ => {}
     }
@@ -625,10 +663,50 @@ fn gen_expr(expr: &Expression) -> Result<String, String> {
 
             Ok(format!("({}) {{ {} }}", name, fields_code.join(", ")))
         }
+
+        // ===== v0.4.0 Expression Generation =====
+
+        Expression::Await(inner) => {
+            let inner_code = gen_expr(inner)?;
+            Ok(format!("azc_await({})", inner_code))
+        }
+
+        Expression::AsyncBlock(statements) => {
+            let mut block_code = String::from("/* async */ { ");
+            for stmt in statements {
+                let mut stmt_code = String::new();
+                gen_stmt(&mut stmt_code, stmt, 0)?;
+                block_code.push_str(&stmt_code);
+            }
+            block_code.push_str(" }");
+            Ok(block_code)
+        }
+
+        Expression::MacroCall { name, args } => {
+            let args_code: Vec<String> = args
+                .iter()
+                .map(|a| gen_expr(a))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(format!("/* macro {}({}) */", name, args_code.join(", ")))
+        }
+
+        Expression::UnsafeExpr(inner) => {
+            let inner_code = gen_expr(inner)?;
+            Ok(format!("/* unsafe */ {}", inner_code))
+        }
+
+        Expression::ForeignCall { abi, name, args } => {
+            let args_code: Vec<String> = args
+                .iter()
+                .map(|a| gen_expr(a))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(format!("/* extern \"{}\" */ {}({})", abi, name, args_code.join(", ")))
+        }
+
         // Handle all other expression types
         _ => Ok("/* unknown expression */".to_string()),
-        }
     }
+}
 
 /// Compile error
 #[derive(Debug)]

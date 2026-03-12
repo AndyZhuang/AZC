@@ -1,0 +1,8 @@
+# Test unsafe blocks (v0.4.0)
+
+# Unsafe block
+unsafe
+    puts "In unsafe block"
+end
+
+puts "unsafe test complete"

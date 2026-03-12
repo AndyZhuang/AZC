@@ -1,7 +1,7 @@
 # AZC Programming Language
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.4.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Rust-1.70+-orange.svg" alt="Rust">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/safety-95%2F100-brightgreen.svg" alt="Safety Score">
@@ -520,6 +520,70 @@ def embedded_function()
 end
 ```
 
+### Advanced Features (v0.4.0)
+
+#### Async/Await
+
+```ruby
+# Async function for non-blocking I/O
+async def fetch_data() -> Future<String>
+    let response = await http_get("https://api.example.com")
+    response.body
+end
+
+# Concurrent execution
+async def process_multiple()
+    let task1 = async { fetch_data() }
+    let task2 = async { compute_result() }
+    let results = await all([task1, task2])
+    results
+end
+```
+
+#### Macros
+
+```ruby
+# Compile-time code generation
+macro debug_log(expr)
+    puts "Debug: #{expr} = #{expr}"
+end
+
+# Usage
+debug_log(x + y)  # Expands to: puts "Debug: x + y = <computed value>"
+```
+
+#### Unsafe Blocks
+
+```ruby
+# Escape hatch for low-level operations
+unsafe
+    # Direct memory manipulation (use with caution!)
+    let ptr = raw_pointer(address)
+    write_memory(ptr, value)
+end
+
+# Document why unsafe is needed
+unsafe "Required for hardware register access"
+    write_hardware_register(0x1000, data)
+end
+```
+
+#### Foreign Function Interface (FFI)
+
+```ruby
+# Import C functions
+extern "C"
+    def puts(s: String) -> Int
+    def strlen(s: String) -> Int
+    def malloc(size: Int) -> Pointer
+    def free(ptr: Pointer)
+end
+
+# Call external functions
+let len = strlen("Hello, World!")
+puts("String length: #{len}")
+```
+
 ---
 
 ## 🏭 Industrial Control Features
@@ -645,15 +709,15 @@ azc-sim test --safety
 ```
 
 **Current Test Status:**
-- ✅ 43 unit tests passing
-- ✅ 6 integration tests passing
+- ✅ 101 unit tests passing
+- ✅ 12 integration tests passing
 - ✅ Safety score: 95/100
 
 ---
 
 ## 🗺️ Roadmap
 
-### v0.2.0 (Current) - Safety & Tooling ✅
+### v0.2.0 - Safety & Tooling ✅
 - [x] Type system with inference
 - [x] Ownership and borrowing
 - [x] Borrow checker
@@ -666,19 +730,18 @@ azc-sim test --safety
 - [x] Safety visualization (azc-viz)
 - [x] Industrial simulator (azc-sim)
 
-### v0.3.0 - Core Features
-- [ ] Generics
-- [ ] Traits
-- [ ] Pattern matching
-- [ ] Error handling (Result/Option)
-- [ ] Closures
+### v0.3.0 - Core Features ✅
+- [x] Generics
+- [x] Traits
+- [x] Pattern matching
+- [x] Error handling (Result/Option)
+- [x] Closures
 
-### v0.4.0 - Advanced Features
-- [ ] Async/await
-- [ ] Macros
-- [ ] Unsafe blocks
-- [ ] FFI
-
+### v0.4.0 (Current) - Advanced Features
+- [x] Async/await
+- [x] Macros
+- [x] Unsafe blocks
+- [x] FFI
 ### v0.5.0 - Ecosystem
 - [ ] Package registry
 - [ ] VSCode extension
