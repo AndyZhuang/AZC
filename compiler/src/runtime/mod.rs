@@ -216,3 +216,10 @@ mod tests {
         // This would panic: azc_assert(false, "test");
     }
 }
+
+
+pub mod agent;
+pub mod sandbox;
+pub mod hotreload;
+pub mod plugin;
+pub mod distributed;

@@ -1,0 +1,4 @@
+# Test compound assignment operators
+let x = 10
+x+=5
+puts x
