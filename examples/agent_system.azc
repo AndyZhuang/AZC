@@ -1,0 +1,183 @@
+# Agent System Example
+# Multi-agent coordination with tool calling and state management
+
+puts "=== AZC Agent System Demo ==="
+
+# Agent registry for agent discovery
+agent_registry = {}
+
+# Define a data processing agent
+class DataAgent
+    def initialize(name)
+        @name = name
+        @state = {}
+        @tool_count = 0
+    end
+    
+    def name
+        @name
+    end
+    
+    # Register a tool with the agent
+    def register_tool(name, handler)
+        @tool_count += 1
+        puts "Agent '#{@name}' registered tool: #{name}"
+    end
+    
+    # Execute a tool
+    def execute(tool_name, args)
+        puts "Agent '#{@name}' executing tool: #{tool_name}"
+        
+        if tool_name == "transform"
+            data = args[:data]
+            operation = args[:operation]
+            
+            result = data.map do |item|
+                case operation
+                when "uppercase"
+                    item.to_upper()
+                when "reverse"
+                    item.reverse()
+                when "length"
+                    item.length()
+                else
+                    item
+                end
+            end
+            
+            @state[:last_result] = result
+            result
+        elsif tool_name == "filter"
+            data = args[:data]
+            predicate = args[:predicate]
+            
+            result = data.select do |item|
+                case predicate
+                when "even"
+                    item % 2 == 0
+                when "positive"
+                    item > 0
+                when "long_words"
+                    item.length > 5
+                else
+                    true
+                end
+            end
+            
+            @state[:last_result] = result
+            result
+        else
+            puts "Unknown tool: #{tool_name}"
+            nil
+        end
+    end
+    
+    # Get agent state
+    def get_state(key)
+        @state[key]
+    end
+    
+    # Reset agent
+    def reset
+        @state = {}
+        puts "Agent '#{@name}' state reset"
+    end
+end
+
+# Define an API agent
+class APIAgent
+    def initialize(name)
+        @name = name
+        @endpoints = {}
+    end
+    
+    def name
+        @name
+    end
+    
+    def register_endpoint(path, handler)
+        @endpoints[path] = handler
+        puts "API Agent '#{@name}' registered endpoint: #{path}"
+    end
+    
+    def call(path, params)
+        if @endpoints[path]
+            handler = @endpoints[path]
+            handler.call(params)
+        else
+            { error: "Endpoint not found: #{path}" }
+        end
+    end
+end
+
+# Create agents
+puts "Creating agents..."
+data_agent = DataAgent.new("data-processor")
+api_agent = APIAgent.new("api-gateway")
+analytics_agent = DataAgent.new("analytics")
+
+# Register tools with data agent
+data_agent.register_tool("transform", fn { |args| })
+data_agent.register_tool("filter", fn { |args| })
+data_agent.register_tool("aggregate", fn { |args| })
+
+# Register API endpoints
+api_agent.register_endpoint("/users", fn { |params|
+    { users: [
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" }
+    ]}
+})
+
+api_agent.register_endpoint("/data", fn { |params|
+    { data: [1, 2, 3, 4, 5] }
+})
+
+# Demonstrate agent coordination
+puts ""
+puts "=== Agent Coordination Demo ==="
+
+# Step 1: Fetch data from API
+puts "Step 1: Fetching data from API..."
+response = api_agent.call("/data", {})
+data = response[:data]
+puts "Received: #{data.inspect}"
+
+# Step 2: Transform data with data agent
+puts ""
+puts "Step 2: Transforming data..."
+result = data_agent.execute("transform", {
+    data: data,
+    operation: "multiply_by_2"
+})
+puts "Transformed: #{result.inspect}"
+
+# Step 3: Filter with data agent
+puts ""
+puts "Step 3: Filtering data..."
+filtered = data_agent.execute("filter", {
+    data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    predicate: "even"
+})
+puts "Filtered (even): #{filtered.inspect}"
+
+# Step 4: Demonstrate state persistence
+puts ""
+puts "Step 4: Checking agent state..."
+last_result = data_agent.get_state(:last_result)
+puts "Last result from data agent: #{last_result.inspect}"
+
+# Step 5: Call another API endpoint
+puts ""
+puts "Step 5: Calling user endpoint..."
+users_response = api_agent.call("/users", {})
+puts "Users: #{users_response.inspect}"
+
+# Summary
+puts ""
+puts "=== Summary ==="
+puts "Total tools registered: #{data_agent.execute("get_tool_count", {})}"
+puts "API endpoints: #{api_agent.endpoints.keys().join(', ')}"
+
+puts ""
+puts "=== Agent Demo Complete ==="

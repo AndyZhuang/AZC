@@ -1,0 +1,139 @@
+# Data Processing Pipeline Example
+# ETL: Extract, Transform, Load operations
+
+puts "=== AZC Data Processing Pipeline ==="
+
+# Sample data sources
+raw_data = [
+    { id: 1, name: "john doe", email: "JOHN@EXAMPLE.COM", age: "28", city: "NEW YORK" },
+    { id: 2, name: "jane smith", email: "jane.smith@company.org", age: "34", city: "Los Angeles" },
+    { id: 3, name: "bob wilson", email: "bob@test.net", age: "45", city: "Chicago" },
+    { id: 4, name: "alice brown", email: "alice@domain.com", age: "22", city: "Houston" },
+    { id: 5, name: "charlie davis", email: "charlie@provider.io", age: "31", city: "Phoenix" }
+]
+
+# Stage 1: Extract - Data validation
+def extract(data)
+    valid_records = []
+    invalid_count = 0
+    
+    for record in data
+        is_valid = record.id and record.name and record.email and record.age
+        
+        if is_valid
+            valid_records.push(record)
+        else
+            invalid_count += 1
+        end
+    end
+    
+    puts "Extract: #{valid_records.length} valid, #{invalid_count} invalid"
+    valid_records
+end
+
+# Stage 2: Transform - Data normalization and enrichment
+def transform(data)
+    transformed = []
+    
+    for record in data
+        # Normalize case
+        name = record.name.to_lower()
+        email = record.email.to_lower()
+        city = record.city.to_lower()
+        
+        # Parse age
+        age = record.age.to_i()
+        
+        # Calculate birth year
+        current_year = 2024
+        birth_year = current_year - age
+        
+        # Determine age group
+        age_group = "unknown"
+        if age < 18
+            age_group = "minor"
+        elsif age < 30
+            age_group = "young_adult"
+        elsif age < 50
+            age_group = "adult"
+        else
+            age_group = "senior"
+        end
+        
+        # Create enriched record
+        enriched = {
+            id: record.id,
+            name: name,
+            email: email,
+            city: city,
+            age: age,
+            birth_year: birth_year,
+            age_group: age_group
+        }
+        
+        transformed.push(enriched)
+    end
+    
+    puts "Transform: #{transformed.length} records enriched"
+    transformed
+end
+
+# Stage 3: Load - Output formatted data
+def load(data)
+    total_age = 0
+    
+    for record in data
+        total_age += record.age
+        
+        # Format output
+        output = "ID: #{record.id}, Name: #{record.name}, Email: #{record.email}"
+        puts output
+        
+        detail = "  Location: #{record.city}, Age: #{record.age} (#{record.age_group})"
+        puts detail
+    end
+    
+    # Calculate statistics
+    count = data.length
+    avg_age = total_age / count
+    
+    puts ""
+    puts "Statistics:"
+    puts "  Total records: #{count}"
+    puts "  Average age: #{avg_age}"
+    
+    # Group by age group
+    groups = {}
+    for record in data
+        group = record.age_group
+        if groups[group]
+            groups[group] += 1
+        else
+            groups[group] = 1
+        end
+    end
+    
+    puts "  Age distribution:"
+    for group_name in ["minor", "young_adult", "adult", "senior"]
+        if groups[group_name]
+            puts "    #{group_name}: #{groups[group_name]}"
+        end
+    end
+    
+    puts "Load: Complete"
+end
+
+# Pipeline execution
+puts ""
+
+# Run pipeline
+extracted = extract(raw_data)
+puts ""
+
+transformed = transform(extracted)
+puts ""
+
+load(transformed)
+
+puts ""
+puts "=== Pipeline Complete ==="

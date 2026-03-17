@@ -1,0 +1,142 @@
+# Web Server Example
+# REST API with routing, middleware, and JSON responses
+
+# Server configuration
+let port = 8080
+let host = "0.0.0.0"
+
+# Route definitions
+routes = [
+    { path: "/", method: "GET", handler: "home" },
+    { path: "/api/users", method: "GET", handler: "list_users" },
+    { path: "/api/users/:id", method: "GET", handler: "get_user" },
+    { path: "/api/users", method: "POST", handler: "create_user" },
+    { path: "/health", method: "GET", handler: "health_check" }
+]
+
+# Home handler
+def home(request)
+    {
+        status: 200,
+        body: "Welcome to AZC Web Server",
+        headers: { "Content-Type": "text/html" }
+    }
+end
+
+# List users - demonstrates array operations
+def list_users(request)
+    users = [
+        { id: 1, name: "Alice", email: "alice@example.com" },
+        { id: 2, name: "Bob", email: "bob@example.com" },
+        { id: 3, name: "Charlie", email: "charlie@example.com" }
+    ]
+    
+    {
+        status: 200,
+        body: users.to_json(),
+        headers: { "Content-Type": "application/json" }
+    }
+end
+
+# Get single user - demonstrates optional handling
+def get_user(request)
+    user_id = request.params.id
+    
+    if user_id == 1
+        user = { id: 1, name: "Alice", email: "alice@example.com" }
+    elsif user_id == 2
+        user = { id: 2, name: "Bob", email: "bob@example.com" }
+    elsif user_id == 3
+        user = { id: 3, name: "Charlie", email: "charlie@example.com" }
+    else
+        return {
+            status: 404,
+            body: { error: "User not found" }.to_json(),
+            headers: { "Content-Type": "application/json" }
+        }
+    end
+    
+    {
+        status: 200,
+        body: user.to_json(),
+        headers: { "Content-Type": "application/json" }
+    }
+end
+
+# Create user - demonstrates input validation
+def create_user(request)
+    body = request.body
+    
+    if body.name and body.email
+        new_user = {
+            id: 4,
+            name: body.name,
+            email: body.email
+        }
+        
+        {
+            status: 201,
+            body: new_user.to_json(),
+            headers: { "Content-Type": "application/json" }
+        }
+    else
+        {
+            status: 400,
+            body: { error: "Missing required fields" }.to_json(),
+            headers: { "Content-Type": "application/json" }
+        }
+    end
+end
+
+# Health check
+def health_check(request)
+    {
+        status: 200,
+        body: { status: "healthy", timestamp: Time.now() }.to_json(),
+        headers: { "Content-Type": "application/json" }
+    }
+end
+
+# Middleware: Logging
+def log_request(request)
+    puts "Request: #{request.method} #{request.path}"
+    
+    # Continue to next middleware
+    request
+end
+
+# Middleware: Authentication
+def authenticate(request)
+    token = request.headers.authorization
+    
+    if token
+        # Validate token
+        is_valid = token.starts_with?("Bearer ")
+        
+        if is_valid
+            return request
+        end
+    end
+    
+    # Return 401 if not authenticated
+    {
+        status: 401,
+        body: { error: "Unauthorized" }.to_json(),
+        headers: { "Content-Type": "application/json" }
+    }
+end
+
+# Start server
+puts "Starting AZC Web Server on #{host}:#{port}"
+puts "Routes registered: #{routes.length}"
+
+# Simulate server loop
+request_count = 0
+
+while request_count < 3
+    puts "Waiting for request..."
+    request_count += 1
+    puts "Processed request ##{request_count}"
+end
+
+puts "Server stopped"
