@@ -1,0 +1,151 @@
+# AZC Multi-Agent Collaboration Examples
+# Based on OpenAgents workspace concept
+# Reference: https://github.com/openagents-org/openagents
+
+# ============================================
+# Example 1: Create Workspace
+# ============================================
+# Create a shared workspace where agents collaborate
+
+workspace = Workspace.new("Research Team")
+
+# Add agents to workspace
+researcher1 = Agent.new("Researcher-1")
+researcher2 = Agent.new("Researcher-2") 
+analyst = AnalystAgent.new("Data-Analyst")
+
+workspace.add(researcher1)
+workspace.add(researcher2)
+workspace.add(analyst)
+
+puts "Workspace created: #{workspace.name}"
+puts "Members: #{workspace.members.length}"
+
+# ============================================
+# Example 2: Shared Files
+# ============================================
+# Agents share files in workspace
+
+# Upload file to workspace
+workspace.upload("data.csv", "{id:1,value:100},{id:2,value:200}")
+workspace.upload("analysis.py", "def analyze(data): return sum(data)")
+
+# List shared files
+files = workspace.list_files
+puts "Shared files: #{files.length}"
+for f in files
+    puts "  - #{f.name} (#{f.size} bytes)"
+end
+
+# Download file
+content = workspace.download("data.csv")
+puts "Downloaded data.csv: #{content}"
+
+# ============================================
+# Example 3: Task Distribution
+# ============================================
+# Distribute work among agents in workspace
+
+task = Task.new(
+    title: "Market Analysis",
+    description: "Analyze Q4 sales data and create report"
+)
+
+# Split task into subtasks
+subtasks = task.distribute([
+    { agent: "Researcher-1", work: "collect data from API" },
+    { agent: "Researcher-2", work: "clean and preprocess data" },
+    { agent: "Data-Analyst", work: "generate insights and charts" }
+])
+
+# Execute subtasks in parallel
+results = []
+for subtask in subtasks
+    result = subtask.execute
+    results.push(result)
+end
+
+# Combine results
+final_report = Task.combine(results)
+puts "Final report generated: #{final_report.title}"
+
+# ============================================
+# Example 4: Agent @Mention Delegation
+# ============================================
+# Like OpenAgents, agents can @mention each other
+
+# Researcher-1 delegates to Data-Analyst
+delegation = Message.new(
+    from: "Researcher-1",
+    to: "Data-Analyst",
+    content: "@Data-Analyst Can you create visualizations for the sales data?"
+)
+
+response = analyst.process(delegation)
+puts "Analyst response: #{response.content}"
+
+# ============================================
+# Example 5: Collaborative Editing
+# ============================================
+# Multiple agents work on same document
+
+doc = workspace.create_document("research_report.md")
+
+# Agent 1 adds section 1
+doc.edit("Researcher-1", "## Introduction\nThis report analyzes market trends...")
+
+# Agent 2 adds section 2  
+doc.edit("Researcher-2", "## Methodology\nWe used data from multiple sources...")
+
+# Agent 3 adds analysis
+doc.edit("Data-Analyst", "## Findings\nThe data shows significant growth in...")
+
+# Get final document
+final_doc = doc.get_content
+puts "Document created with #{doc.section_count} sections"
+
+# ============================================
+# Example 6: Agent Discovery and Capabilities
+# ============================================
+# Agents discover each other's capabilities
+
+capabilities = {
+    "Researcher-1" => ["web_scraping", "api_integration", "data_collection"],
+    "Researcher-2" => ["data_cleaning", "preprocessing", "validation"],
+    "Data-Analyst" => ["statistics", "visualization", "machine_learning"]
+}
+
+# Find best agent for task
+best_agent = workspace.find_agent(
+    required_capabilities: ["visualization", "statistics"]
+)
+puts "Best agent for visualization: #{best_agent.name}"
+
+# Get all agents with capability
+python_agents = workspace.agents_with_capability("data_cleaning")
+puts "Agents with data_cleaning: #{python_agents.length}"
+
+# ============================================
+# Example 7: Real-time Collaboration
+# ============================================
+# Shared browser and live updates
+
+browser = workspace.shared_browser
+
+# Open URL in shared browser
+browser.navigate("https://example.com/data")
+browser.screenshot("initial_state.png")
+
+# Agent 1 interacts
+browser.click("#login-button")
+browser.fill("#username", "researcher")
+
+# Agent 2 sees the change
+updates = browser.get_updates
+puts "Browser updates: #{updates.length} events"
+
+# Get current state
+current_url = browser.current_url
+puts "Current URL: #{current_url}"
+
+puts "Multi-agent collaboration demo complete!"

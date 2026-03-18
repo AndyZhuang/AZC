@@ -1,0 +1,180 @@
+# AZC Agent Task Delegation Examples
+# Based on OpenAgents mod-driven architecture
+# Reference: https://github.com/openagents-org/openagents
+
+# ============================================
+# Example 1: Direct Task Delegation
+# ============================================
+# One agent delegates work to another
+
+# Initialize agents
+coordinator = CoordinatorAgent.new("Coordinator")
+worker1 = WorkerAgent.new("Worker-1")
+worker2 = WorkerAgent.new("Worker-2")
+
+# Coordinator assigns task to worker
+task1 = Task.new(
+    name: "Data Processing",
+    input: { file: "data.json", operation: "transform" }
+)
+
+# Delegate with callback
+result1 = coordinator.delegate(
+    to: "Worker-1",
+    task: task1,
+    on_complete: "notify_coordinator"
+)
+
+puts "Task 1 delegated, result: #{result1.status}"
+
+# ============================================
+# Example 2: Task Chaining
+# ============================================
+# Sequential delegation - output of one task becomes input of next
+
+# Build task chain
+chain = TaskChain.new
+
+chain.add(Task.new(name: "Fetch", action: "get_data"))
+chain.add(Task.new(name: "Process", action: "clean_data"))
+chain.add(Task.new(name: "Analyze", action: "generate_insights"))
+chain.add(Task.new(name: "Report", action: "create_pdf"))
+
+# Execute chain
+output = chain.execute({ source: "api" })
+puts "Chain completed, output: #{output.filename}"
+
+# ============================================
+# Example 3: Parallel Delegation
+# ============================================
+# Delegate multiple tasks to different agents simultaneously
+
+tasks = [
+    Task.new(name: "Web Scraping", agent: "Worker-1", target: "site1.com"),
+    Task.new(name: "API Query", agent: "Worker-2", endpoint: "/api/data"),
+    Task.new(name: "Database Query", agent: "Worker-3", query: "SELECT * FROM sales")
+]
+
+# Execute in parallel
+results = Task.execute_parallel(tasks)
+
+for result in results
+    puts "#{result.task_name}: #{result.status}"
+end
+
+# Aggregate results
+combined = Task.aggregate(results)
+puts "Combined results: #{combined.summary}"
+
+# ============================================
+# Example 4: Task Routing (Load Balancing)
+# ============================================
+# Route tasks to least busy agent
+
+class LoadBalancer
+    def route_task(task)
+        agents = get_available_agents
+        
+        # Find agent with least workload
+        best = nil
+        min_load = 999999
+        
+        for agent in agents
+            load = agent.current_tasks.length
+            if load < min_load
+                min_load = load
+                best = agent
+            end
+        end
+        
+        best.assign(task)
+        return best.name
+    end
+end
+
+lb = LoadBalancer.new
+
+# Submit 5 tasks, should distribute evenly
+for i in 0..4
+    task = Task.new(name: "Task-#{i}")
+    agent = lb.route_task(task)
+    puts "Task-#{i} routed to #{agent}"
+end
+
+# ============================================
+# Example 5: Task Priority and Deadlines
+# ============================================
+# Handle priority levels and deadlines
+
+urgent_task = Task.new(
+    name: "Critical Fix",
+    priority: "urgent",
+    deadline: "2024-01-15T10:00:00Z"
+)
+
+normal_task = Task.new(
+    name: "Regular Task", 
+    priority: "normal",
+    deadline: "2024-01-20T17:00:00Z"
+)
+
+low_task = Task.new(
+    name: "Background Job",
+    priority: "low",
+    deadline: "2024-01-25T23:59:59Z"
+)
+
+# Queue respects priority
+queue = TaskQueue.new
+queue.add(urgent_task)
+queue.add(normal_task)
+queue.add(low_task)
+
+# Urgent tasks processed first
+next_task = queue.next
+puts "Next task to process: #{next_task.name} (priority: #{next_task.priority})"
+
+# ============================================
+# Example 6: Task Result Validation
+# ============================================
+# Validate task output before accepting
+
+validator = ResultValidator.new({
+    "data_analysis" => lambda { |result| result.has_key?("summary") && result.has_key?("charts") },
+    "file_processing" => lambda { |result| result["success"] == true && result["output_file"] != nil }
+})
+
+# Submit task with validation
+task = Task.new(name: "Analyze Data", type: "data_analysis")
+result = worker1.execute(task)
+
+# Validate result
+is_valid = validator.validate(task.type, result)
+puts "Result valid: #{is_valid}"
+
+if not is_valid
+    # Retry or escalate
+    puts "Task failed validation, retrying..."
+end
+
+# ============================================
+# Example 7: Task Dependencies
+# ============================================
+# Define task dependencies (DAG)
+
+workflow = TaskWorkflow.new
+
+# Define tasks and dependencies
+workflow.add(Task.new(name: "Setup", id: "t1"))
+workflow.add(Task.new(name: "Fetch", id: "t2", depends_on: ["t1"]))
+workflow.add(Task.new(name: "Process", id: "t3", depends_on: ["t2"]))
+workflow.add(Task.new(name: "Validate", id: "t4", depends_on: ["t3"]))
+workflow.add(Task.new(name: "Deploy", id: "t5", depends_on: ["t4"]))
+
+# Execute in dependency order
+execution_order = workflow.get_execution_order
+puts "Execution order: #{execution_order.join(' -> ')}"
+
+workflow.execute
+
+puts "Task delegation demo complete!"

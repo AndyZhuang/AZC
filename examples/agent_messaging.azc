@@ -1,0 +1,113 @@
+# AZC Agent Communication Examples
+# Based on OpenAgents architecture - Agent Networks for Open Collaboration
+# Reference: https://github.com/openagents-org/openagents
+
+# ============================================
+# Example 1: Basic Agent Messaging
+# ============================================
+# Two agents discover each other and exchange messages
+
+# Define Agent structure
+agent_alpha = Agent.new("Alpha")
+agent_beta = Agent.new("Beta")
+
+# Agents discover each other in the network
+alpha_discover_beta = agent_alpha.discover("Beta")
+beta_discover_alpha = agent_beta.discover("Alpha")
+
+# Send message from Alpha to Beta
+message1 = Message.new(
+    from: "Alpha",
+    to: "Beta", 
+    content: "Hello Beta! Ready to collaborate?"
+)
+
+response1 = agent_alpha.send(message1)
+puts "Alpha sent: #{response1.content}"
+
+# Beta responds
+message2 = Message.new(
+    from: "Beta",
+    to: "Alpha",
+    content: "Hello Alpha! Yes, let's work together on the task."
+)
+
+response2 = agent_beta.send(message2)
+puts "Beta replied: #{response2.content}"
+
+# ============================================
+# Example 2: Agent Message Types
+# ============================================
+# Different message types for various communication patterns
+
+# Request - asking for information
+request_msg = Message.new(
+    type: "request",
+    from: "Alpha",
+    to: "Beta",
+    content: "Can you summarize the research paper?"
+)
+
+# Response - answering a request  
+response_msg = Message.new(
+    type: "response",
+    from: "Beta", 
+    to: "Alpha",
+    content: "The paper discusses neural network architectures..."
+)
+
+# Broadcast - message to all agents in network
+broadcast_msg = Message.new(
+    type: "broadcast",
+    from: "Alpha",
+    to: "all",
+    content: "New task available: Data analysis project"
+)
+
+# Delegate - assigning work to another agent
+delegate_msg = Message.new(
+    type: "delegate",
+    from: "Alpha",
+    to: "Beta",
+    content: "Please process the data files in /workspace/data"
+)
+
+puts "Message types: request, response, broadcast, delegate"
+
+# ============================================
+# Example 3: Agent Status and Presence
+# ============================================
+# Agents track online status and capabilities
+
+alpha_status = agent_alpha.status
+puts "Alpha status: #{alpha_status.status}"  # online, busy, offline
+puts "Alpha capabilities: #{alpha_status.capabilities}"
+puts "Alpha last seen: #{alpha_status.last_seen}"
+
+# Update agent status
+agent_alpha.set_status("busy")
+agent_beta.set_status("online")
+
+# Get all online agents
+online_agents = network.online_agents
+puts "Online agents: #{online_agents.length}"
+
+# ============================================
+# Example 4: Message History and Context
+# ============================================
+# Agents maintain conversation history
+
+conversation = agent_alpha.get_conversation("Beta")
+puts "Conversation with Beta: #{conversation.message_count} messages"
+
+# Get recent messages
+recent = conversation.recent(5)
+for msg in recent
+    puts "  [#{msg.timestamp}] #{msg.from}: #{msg.content}"
+end
+
+# Search message history
+search_results = agent_alpha.search_messages("collaborate")
+puts "Found #{search_results.length} relevant messages"
+
+puts "Agent messaging demo complete!"

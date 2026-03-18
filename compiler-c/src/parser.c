@@ -18,17 +18,16 @@ typedef struct {
 static Token* peek(Parser* parser) {
     ParserInternal* p = (ParserInternal*)parser;
     if (p->current >= p->token_count) {
-        return &p->tokens[p->token_count - 1];
+        return &p->tokens[p->token_count > 0 ? p->token_count - 1 : 0];
     }
     return &p->tokens[p->current];
 }
 
-static Token* advance(Parser* parser) {
+static void advance(Parser* parser) {
     ParserInternal* p = (ParserInternal*)parser;
     if (p->current < p->token_count - 1) {
         p->current++;
     }
-    return peek(parser);
 }
 
 static bool is_at_end(Parser* parser) {
@@ -39,14 +38,6 @@ static bool is_at_end(Parser* parser) {
 static bool check(Parser* parser, TokenType type) {
     if (is_at_end(parser)) return false;
     return peek(parser)->type == type;
-}
-
-static bool match(Parser* parser, TokenType type) {
-    if (check(parser, type)) {
-        advance(parser);
-        return true;
-    }
-    return false;
 }
 
 Parser* parser_create(Lexer* lexer) {
@@ -67,8 +58,9 @@ static ASTNode* parse_expression(Parser* parser);
 
 static ASTNode* parse_primary(Parser* parser) {
     Token* tok = peek(parser);
+    TokenType ttype = tok->type;
     
-    if (tok->type == TOKEN_NUMBER) {
+    if (ttype == TOKEN_NUMBER) {
         advance(parser);
         ASTNode* node = (ASTNode*)calloc(1, sizeof(ASTNode));
         node->type = AST_NUMBER;
@@ -77,7 +69,15 @@ static ASTNode* parse_primary(Parser* parser) {
         return node;
     }
     
-    if (tok->type == TOKEN_IDENTIFIER) {
+    if (ttype == TOKEN_STRING) {
+        advance(parser);
+        ASTNode* node = (ASTNode*)calloc(1, sizeof(ASTNode));
+        node->type = AST_STRING;
+        node->string.value = strdup(tok->lexeme ? tok->lexeme : "");
+        return node;
+    }
+    
+    if (ttype == TOKEN_IDENTIFIER) {
         advance(parser);
         ASTNode* node = (ASTNode*)calloc(1, sizeof(ASTNode));
         node->type = AST_IDENTIFIER;
@@ -85,11 +85,11 @@ static ASTNode* parse_primary(Parser* parser) {
         return node;
     }
     
-    if (tok->type == TOKEN_TRUE || tok->type == TOKEN_FALSE) {
+    if (ttype == TOKEN_TRUE || ttype == TOKEN_FALSE) {
         advance(parser);
         ASTNode* node = (ASTNode*)calloc(1, sizeof(ASTNode));
         node->type = AST_BOOL;
-        node->literal.value = (tok->type == TOKEN_TRUE) ? 1.0 : 0.0;
+        node->literal.value = (ttype == TOKEN_TRUE) ? 1.0 : 0.0;
         return node;
     }
     
@@ -98,11 +98,13 @@ static ASTNode* parse_primary(Parser* parser) {
 
 static ASTNode* parse_term(Parser* parser) {
     ASTNode* left = parse_primary(parser);
+    if (!left) return NULL;
     
     while (check(parser, TOKEN_PLUS) || check(parser, TOKEN_MINUS)) {
         Token* op = peek(parser);
         advance(parser);
         ASTNode* right = parse_primary(parser);
+        if (!right) break;
         ASTNode* node = (ASTNode*)calloc(1, sizeof(ASTNode));
         node->type = AST_BINARY;
         node->binary.operator = op->type;
